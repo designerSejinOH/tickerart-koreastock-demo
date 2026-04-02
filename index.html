@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>주식 시세</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+    :root {
+      --bg: #080808;
+      --surface: #0f0f0f;
+      --surface2: #161616;
+      --border: #222;
+      --text: #e8e8e8;
+      --text-dim: #555;
+      --text-mid: #888;
+      --up: #e8534a;
+      --down: #4a90e8;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'Noto Sans KR', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      padding: 40px 32px;
+    }
+
+    .header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 40px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+    }
+
+    .ticker-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      margin-bottom: 6px;
+    }
+
+    .stock-name {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .price-block {
+      text-align: right;
+    }
+
+    .current-price {
+      font-family: var(--mono);
+      font-size: 32px;
+      font-weight: 500;
+    }
+
+    .price-change {
+      font-family: var(--mono);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .up {
+      color: var(--up);
+    }
+
+    .down {
+      color: var(--down);
+    }
+
+    .neutral {
+      color: var(--text-mid);
+    }
+
+    .controls {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 28px;
+    }
+
+    .period-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      padding: 6px 14px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .period-btn:hover {
+      border-color: var(--text-mid);
+      color: var(--text-mid);
+    }
+
+    .period-btn.active {
+      background: var(--text);
+      border-color: var(--text);
+      color: var(--bg);
+    }
+
+    .chart-wrap {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 24px 16px 16px;
+      margin-bottom: 2px;
+    }
+
+    #chart {
+      width: 100%;
+      height: 320px;
+      display: block;
+    }
+
+    .volume-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: none;
+      padding: 8px 16px 12px;
+      margin-bottom: 28px;
+    }
+
+    #volume-chart {
+      width: 100%;
+      height: 64px;
+      display: block;
+    }
+
+    .tooltip {
+      position: absolute;
+      background: #111;
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.9;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.1s;
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    .tooltip.visible {
+      opacity: 1;
+    }
+
+    .tooltip-date {
+      color: var(--text-dim);
+      font-size: 10px;
+      margin-bottom: 2px;
+    }
+
+    .tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .tooltip-label {
+      color: var(--text-dim);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+
+    .stat-item {
+      background: var(--surface);
+      padding: 16px 20px;
+    }
+
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 18px;
+    }
+
+    .table-wrap {
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .table-header {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 1fr 1fr 1fr 1.4fr;
+      padding: 10px 20px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 1fr 1fr 1fr 1.4fr;
+      padding: 11px 20px;
+      font-family: var(--mono);
+      font-size: 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      transition: background 0.1s;
+    }
+
+    .table-row:last-child {
+      border-bottom: none;
+    }
+
+    .table-row:hover {
+      background: var(--surface2);
+    }
+
+    .table-row .date {
+      color: var(--text-mid);
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 320px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+
+    .loading::after {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 14px;
+      background: var(--text-dim);
+      margin-left: 10px;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .error-msg {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 320px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--up);
+      text-align: center;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .error-detail {
+      font-size: 10px;
+      color: #444;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <div>
+      <div class="ticker-label" id="ticker-label">KRX · 005930</div>
+      <div class="stock-name" id="stock-name">불러오는 중...</div>
+    </div>
+    <div class="price-block">
+      <div class="current-price" id="current-price">—</div>
+      <div class="price-change neutral" id="price-change">—</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="period-btn" data-days="30">1개월</button>
+    <button class="period-btn active" data-days="90">3개월</button>
+    <button class="period-btn" data-days="180">6개월</button>
+    <button class="period-btn" data-days="365">1년</button>
+  </div>
+
+  <div class="chart-wrap" id="chart-wrap">
+    <div class="loading" id="loading">데이터 로딩 중</div>
+    <canvas id="chart" style="display:none"></canvas>
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+  <div class="volume-wrap">
+    <canvas id="volume-chart" style="display:none"></canvas>
+  </div>
+
+  <div class="stats-grid" id="stats-grid" style="display:none">
+    <div class="stat-item">
+      <div class="stat-label">기간 최고</div>
+      <div class="stat-value up" id="stat-high">—</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">기간 최저</div>
+      <div class="stat-value down" id="stat-low">—</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">평균 거래량</div>
+      <div class="stat-value" id="stat-vol">—</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">조회 기간</div>
+      <div class="stat-value" id="stat-period" style="font-size:13px">—</div>
+    </div>
+  </div>
+
+  <div class="table-wrap" id="table-wrap" style="display:none">
+    <div class="table-header">
+      <span>날짜</span><span>종가</span><span>시가</span>
+      <span>고가</span><span>저가</span><span>거래량</span>
+    </div>
+    <div id="table-body"></div>
+  </div>
+
+  <script>
+    const TICKER = '005930';
+    const ISIN = 'KR7005930003'; // 삼성전자 ISIN
+    const BASE_URL = '/api/proxy?svc=GetStockSecuritiesInfoService&op=getStockPriceInfo';
+
+    let allData = [];
+    let currentDays = 90;
+
+    function toDateStr(date) {
+      return date.toISOString().slice(0, 10).replace(/-/g, '');
+    }
+
+    function formatDate(s) {
+      return `${s.slice(0,4)}.${s.slice(4,6)}.${s.slice(6,8)}`;
+    }
+
+    function formatNum(n) {
+      return Number(n).toLocaleString('ko-KR');
+    }
+
+    function formatVol(n) {
+      const v = Number(n);
+      if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+      if (v >= 1e3) return (v / 1e3).toFixed(0) + 'K';
+      return String(v);
+    }
+
+    async function fetchData(days) {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(start.getDate() - Math.round(days * 1.5)); // 주말/공휴일 여유분
+
+      const params = new URLSearchParams({
+        numOfRows: String(days + 60),
+        pageNo: '1',
+        beginBasDt: toDateStr(start),
+        endBasDt: toDateStr(end),
+        isinCd: ISIN,
+      });
+
+      const res = await fetch(`${BASE_URL}&${params}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+
+      const items = json?.response?.body?.items?.item;
+      if (!items) throw new Error('응답 데이터가 없습니다');
+
+      const arr = Array.isArray(items) ? items : [items];
+      const filtered = arr.filter(d => String(d.isinCd).trim() === ISIN);
+      if (!filtered.length) throw new Error(`종목 데이터가 없습니다 (API가 ${arr.length}개 반환)`);
+      return filtered
+        .sort((a, b) => a.basDt.localeCompare(b.basDt))
+        .slice(-days);
+    }
+
+    // ── 차트 ──────────────────────────────────────────
+    function drawChart(data) {
+      const canvas = document.getElementById('chart');
+      const ctx = canvas.getContext('2d');
+      const wrap = document.getElementById('chart-wrap');
+      const tooltip = document.getElementById('tooltip');
+
+      const dpr = window.devicePixelRatio || 1;
+      const W = wrap.clientWidth - 32;
+      const H = 320;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.scale(dpr, dpr);
+
+      const prices = data.map(d => Number(d.clpr));
+      const minP = Math.min(...prices);
+      const maxP = Math.max(...prices);
+      const pad = {
+        top: 20,
+        right: 64,
+        bottom: 28,
+        left: 12
+      };
+      const cW = W - pad.left - pad.right;
+      const cH = H - pad.top - pad.bottom;
+
+      const xScale = i => pad.left + (i / (data.length - 1)) * cW;
+      const yScale = v => pad.top + (1 - (v - minP) / (maxP - minP)) * cH;
+
+      const isUp = prices[prices.length - 1] >= prices[0];
+      const lineColor = isUp ? '#e8534a' : '#4a90e8';
+      const gradAlpha = isUp ? 'rgba(232,83,74,' : 'rgba(74,144,232,';
+
+      const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + cH);
+      grad.addColorStop(0, gradAlpha + '0.18)');
+      grad.addColorStop(1, gradAlpha + '0.01)');
+
+      function render() {
+        ctx.clearRect(0, 0, W, H);
+
+        // 그리드
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+          const y = pad.top + (i / 4) * cH;
+          ctx.strokeStyle = '#1c1c1c';
+          ctx.beginPath();
+          ctx.moveTo(pad.left, y);
+          ctx.lineTo(W - pad.right, y);
+          ctx.stroke();
+          const val = maxP - (i / 4) * (maxP - minP);
+          ctx.fillStyle = '#3a3a3a';
+          ctx.font = `10px 'IBM Plex Mono', monospace`;
+          ctx.textAlign = 'left';
+          ctx.fillText(formatNum(Math.round(val)), W - pad.right + 6, y + 4);
+        }
+
+        // 면적
+        ctx.beginPath();
+        ctx.moveTo(xScale(0), yScale(prices[0]));
+        for (let i = 1; i < prices.length; i++) ctx.lineTo(xScale(i), yScale(prices[i]));
+        ctx.lineTo(xScale(prices.length - 1), pad.top + cH);
+        ctx.lineTo(xScale(0), pad.top + cH);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // 라인
+        ctx.beginPath();
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 1.5;
+        ctx.lineJoin = 'round';
+        ctx.moveTo(xScale(0), yScale(prices[0]));
+        for (let i = 1; i < prices.length; i++) ctx.lineTo(xScale(i), yScale(prices[i]));
+        ctx.stroke();
+
+        // X축
+        ctx.fillStyle = '#3a3a3a';
+        ctx.textAlign = 'center';
+        const lc = Math.min(6, data.length);
+        for (let i = 0; i < lc; i++) {
+          const idx = Math.round(i / (lc - 1) * (data.length - 1));
+          const d = data[idx].basDt;
+          ctx.fillText(`${d.slice(4,6)}.${d.slice(6,8)}`, xScale(idx), H - 6);
+        }
+      }
+
+      render();
+
+      // 인터랙션
+      wrap.onmousemove = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left - pad.left;
+        const idx = Math.max(0, Math.min(data.length - 1, Math.round(mx / cW * (data.length - 1))));
+        const d = data[idx];
+        const x = xScale(idx);
+        const y = yScale(Number(d.clpr));
+
+        render();
+        ctx.strokeStyle = '#2a2a2a';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x, pad.top);
+        ctx.lineTo(x, pad.top + cH);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(W - pad.right, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = lineColor;
+        ctx.fill();
+
+        const chg = Number(d.clpr) - Number(d.mkp);
+        const chgPct = ((chg / Number(d.mkp)) * 100).toFixed(2);
+        const chgSign = chg >= 0 ? '+' : '';
+        const chgColor = chg >= 0 ? '#e8534a' : '#4a90e8';
+
+        tooltip.innerHTML = `
+      <div class="tooltip-date">${formatDate(d.basDt)}</div>
+      <div class="tooltip-row"><span class="tooltip-label">종가</span><span style="color:${chgColor}">${formatNum(d.clpr)}</span></div>
+      <div class="tooltip-row"><span class="tooltip-label">시가</span><span>${formatNum(d.mkp)}</span></div>
+      <div class="tooltip-row"><span class="tooltip-label">고가</span><span style="color:#e8534a">${formatNum(d.hipr)}</span></div>
+      <div class="tooltip-row"><span class="tooltip-label">저가</span><span style="color:#4a90e8">${formatNum(d.lopr)}</span></div>
+      <div class="tooltip-row"><span class="tooltip-label">거래량</span><span>${formatNum(d.trqu)}</span></div>
+    `;
+        tooltip.classList.add('visible');
+
+        const tipLeft = (x + 130 > W) ? x - 148 + pad.left : x + pad.left + 10;
+        const tipTop = Math.max(pad.top, y - 80);
+        tooltip.style.left = tipLeft + 'px';
+        tooltip.style.top = tipTop + 'px';
+      };
+
+      wrap.onmouseleave = () => {
+        tooltip.classList.remove('visible');
+        render();
+      };
+    }
+
+    function drawVolume(data) {
+      const canvas = document.getElementById('volume-chart');
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const W = canvas.parentElement.clientWidth - 32;
+      const H = 64;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.scale(dpr, dpr);
+
+      const vols = data.map(d => Number(d.trqu));
+      const maxV = Math.max(...vols);
+      const bw = (W / data.length) * 0.65;
+
+      ctx.clearRect(0, 0, W, H);
+      data.forEach((d, i) => {
+        const x = (i / data.length) * W + (W / data.length * 0.175);
+        const h = (Number(d.trqu) / maxV) * (H - 4);
+        const isUp = Number(d.clpr) >= Number(d.mkp);
+        ctx.fillStyle = isUp ? 'rgba(232,83,74,0.45)' : 'rgba(74,144,232,0.45)';
+        ctx.fillRect(x, H - h, bw, h);
+      });
+    }
+
+    function updateHeader(data) {
+      const last = data[data.length - 1];
+      const prev = data[data.length - 2];
+      document.getElementById('stock-name').textContent = last.itmsNm;
+      document.getElementById('current-price').textContent = formatNum(last.clpr) + '원';
+      if (prev) {
+        const chg = Number(last.clpr) - Number(prev.clpr);
+        const pct = ((chg / Number(prev.clpr)) * 100).toFixed(2);
+        const el = document.getElementById('price-change');
+        el.textContent = `${chg >= 0 ? '+' : ''}${formatNum(chg)}  (${chg >= 0 ? '+' : ''}${pct}%)`;
+        el.className = 'price-change ' + (chg > 0 ? 'up' : chg < 0 ? 'down' : 'neutral');
+      }
+    }
+
+    function updateStats(data) {
+      const prices = data.map(d => Number(d.clpr));
+      document.getElementById('stat-high').textContent = formatNum(Math.max(...prices));
+      document.getElementById('stat-low').textContent = formatNum(Math.min(...prices));
+      const avgVol = Math.round(data.reduce((s, d) => s + Number(d.trqu), 0) / data.length);
+      document.getElementById('stat-vol').textContent = formatVol(avgVol);
+      document.getElementById('stat-period').textContent =
+        `${formatDate(data[0].basDt)} ~ ${formatDate(data[data.length-1].basDt)}`;
+      document.getElementById('stats-grid').style.display = 'grid';
+    }
+
+    function updateTable(data) {
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = [...data].reverse().slice(0, 20).map(d => {
+        const chg = Number(d.clpr) - Number(d.mkp);
+        const cls = chg > 0 ? 'up' : chg < 0 ? 'down' : '';
+        return `<div class="table-row">
+      <span class="date">${formatDate(d.basDt)}</span>
+      <span class="${cls}">${formatNum(d.clpr)}</span>
+      <span>${formatNum(d.mkp)}</span>
+      <span class="up">${formatNum(d.hipr)}</span>
+      <span class="down">${formatNum(d.lopr)}</span>
+      <span style="color:var(--text-mid)">${formatNum(d.trqu)}</span>
+    </div>`;
+      }).join('');
+      document.getElementById('table-wrap').style.display = 'block';
+    }
+
+    async function load(days) {
+      currentDays = days;
+      const loading = document.getElementById('loading');
+      loading.className = 'loading';
+      loading.textContent = '데이터 로딩 중';
+      loading.style.display = 'flex';
+      document.getElementById('chart').style.display = 'none';
+      document.getElementById('volume-chart').style.display = 'none';
+      document.getElementById('stats-grid').style.display = 'none';
+      document.getElementById('table-wrap').style.display = 'none';
+
+      try {
+        const data = await fetchData(days);
+        allData = data;
+        loading.style.display = 'none';
+        document.getElementById('chart').style.display = 'block';
+        document.getElementById('volume-chart').style.display = 'block';
+        updateHeader(data);
+        drawChart(data);
+        drawVolume(data);
+        updateStats(data);
+        updateTable(data);
+      } catch (err) {
+        loading.style.display = 'flex';
+        loading.innerHTML = `
+      <div class="error-msg">
+        <div>데이터를 불러올 수 없습니다</div>
+        <div class="error-detail">${err.message}</div>
+        <div class="error-detail" style="margin-top:4px">브라우저에서 직접 열면 CORS 차단됩니다.<br>로컬 서버로 실행하거나 CORS 프록시를 사용해주세요.</div>
+      </div>`;
+      }
+    }
+
+    document.querySelectorAll('.period-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        load(Number(btn.dataset.days));
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      if (allData.length) {
+        drawChart(allData);
+        drawVolume(allData);
+      }
+    });
+
+    load(currentDays);
+  </script>
+</body>
+
+</html>
