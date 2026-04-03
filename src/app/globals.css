@@ -12,10 +12,12 @@
   --down: #4a90e8;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 body {
@@ -25,3 +27,4 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
+
