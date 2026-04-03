@@ -132,7 +132,7 @@ export default function StockApp() {
         <motion.span
           className="inline-block w-1 h-3.5 bg-[var(--text-dim)] ml-2.5"
           animate={{ opacity: [1, 0, 1] }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'steps(1)' }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear', times: [0, 0.49, 0.51] }}
         />
       </div>
     );
