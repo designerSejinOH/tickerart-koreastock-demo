@@ -22,7 +22,7 @@ function ApiTable({ data }: { data: Record<string, string | undefined> | null })
   return (
     <div className="border border-[var(--border)]">
       {entries.map(([k, v]) => (
-        <div key={k} className="flex justify-between items-baseline gap-3 px-3 py-[7px] border-b border-[var(--border)] last:border-b-0 font-[family-name:var(--font-mono)] text-[11px]">
+        <div key={k} className="flex justify-between items-baseline gap-3 px-3 py-1.75 border-b border-[var(--border)] last:border-b-0 font-[family-name:var(--font-mono)] text-[11px]">
           <span className="text-[var(--text-dim)] shrink-0">{FIELD_LABELS[k] ?? k}</span>
           <span className="text-right break-all">{formatFieldValue(k, v)}</span>
         </div>
@@ -97,7 +97,7 @@ export default function StockModal({ stock, latestDate, onClose }: StockModalPro
         <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-[var(--border)]">
           <div>
             <div className="text-[18px] font-bold">{stock.itmsNm}</div>
-            <div className="font-[family-name:var(--font-mono)] text-[10px] text-[var(--text-dim)] tracking-widest mt-1">
+            <div className="font-[family-name:var(--font-mono)] text-[10px] text-[var(--text-dim)] tracking-[0.12em] mt-1">
               {stock.mrktCtg} · {stock.srtnCd} · {stock.isinCd}
             </div>
           </div>
@@ -147,7 +147,7 @@ export default function StockModal({ stock, latestDate, onClose }: StockModalPro
                 <CandleChart today={detail.today} yesterday={detail.yesterday} />
 
                 {/* Compare table */}
-                <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-widest uppercase text-[var(--text-dim)] mt-6 mb-2.5">
+                <div className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.12em] uppercase text-[var(--text-dim)] mt-6 mb-2.5">
                   전일 비교 ({detail.yesterday ? formatDate(detail.yesterday.basDt) : '—'} → {formatDate(detail.today.basDt)})
                 </div>
                 <div className="border border-[var(--border)] overflow-hidden mb-1">
@@ -166,12 +166,12 @@ export default function StockModal({ stock, latestDate, onClose }: StockModalPro
                 </div>
 
                 {/* Raw API data */}
-                <div className="font-[family-name:var(--font-mono)] text-[9px] tracking-widest text-[var(--text-dim)] bg-[var(--surface2)] border border-[var(--border)] border-b-0 px-3 py-1.5 mt-5">
+                <div className="font-[family-name:var(--font-mono)] text-[9px] tracking-widest text-[var(--text-dim)] bg-[var(--surface2)] border border-[var(--border)] border-b-0 px-3 py-1.75 mt-5">
                   GetStockSecuritiesInfoService · getStockPriceInfo
                 </div>
                 <ApiTable data={detail.today as unknown as Record<string, string>} />
 
-                <div className="font-[family-name:var(--font-mono)] text-[9px] tracking-widest text-[var(--text-dim)] bg-[var(--surface2)] border border-[var(--border)] border-b-0 px-3 py-1.5 mt-5">
+                <div className="font-[family-name:var(--font-mono)] text-[9px] tracking-widest text-[var(--text-dim)] bg-[var(--surface2)] border border-[var(--border)] border-b-0 px-3 py-1.75 mt-5">
                   GetKrxListedInfoService · getItemInfo
                   {detail.listingError && !detail.listingInfo && (
                     <span className="text-[var(--up)] ml-2">{detail.listingError}</span>
@@ -179,7 +179,7 @@ export default function StockModal({ stock, latestDate, onClose }: StockModalPro
                 </div>
                 <ApiTable data={detail.listingInfo as Record<string, string | undefined> | null} />
 
-                <div className="font-[family-name:var(--font-mono)] text-[9px] tracking-widest text-[var(--text-dim)] bg-[var(--surface2)] border border-[var(--border)] border-b-0 px-3 py-1.5 mt-5">
+                <div className="font-[family-name:var(--font-mono)] text-[9px] tracking-widest text-[var(--text-dim)] bg-[var(--surface2)] border border-[var(--border)] border-b-0 px-3 py-1.75 mt-5">
                   GetCorpBasicInfoService_V2 · getCorpBasicInfo
                 </div>
                 <ApiTable data={detail.corpInfo as Record<string, string | undefined> | null} />
