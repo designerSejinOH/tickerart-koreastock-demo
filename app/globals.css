@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #080808;
+  --surface: #0f0f0f;
+  --surface2: #161616;
+  --border: #222;
+  --text: #e8e8e8;
+  --text-dim: #555;
+  --text-mid: #888;
+  --up: #e8534a;
+  --down: #4a90e8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans), 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
