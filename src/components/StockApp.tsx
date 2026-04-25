@@ -4,16 +4,16 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import StockRow from "./StockRow";
 import StockModal from "./StockModal";
-import { findLatestDate, fetchPage } from "@/lib/api";
+import { findLatestDate, fetchPage, fetchMarketCount } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { loadTickerMap } from "@/lib/tickerMap";
 import type { StockItem, SortKey } from "@/lib/types";
 
-const MARKETS = [
+const BASE_MARKETS: { label: string; value: string }[] = [
   { label: "전체", value: "" },
   { label: "KOSPI", value: "KOSPI" },
   { label: "KOSDAQ", value: "KOSDAQ" },
-  { label: "KONEX", value: "KONEX" },
-] as const;
+];
 
 const SORT_COLS: { label: string; key: SortKey; left?: boolean }[] = [
   { label: "종목", key: "itmsNm", left: true },
@@ -48,7 +48,9 @@ function SortBtn({
       } ${active ? "text-(--text)" : "text-(--text-dim) hover:text-(--text-mid)"}`}
     >
       {label}
-      <i className={`not-italic text-xs ${active ? "opacity-100" : "opacity-50"}`}>
+      <i
+        className={`not-italic text-xs ${active ? "opacity-100" : "opacity-50"}`}
+      >
         {active ? (dir === 1 ? "▲" : "▼") : ""}
       </i>
     </button>
@@ -68,12 +70,39 @@ export default function StockApp() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const [selectedStock, setSelectedStock] = useState<StockItem | null>(null);
+  const [isDark, setIsDark] = useState(false);
+  const [tickerMap, setTickerMap] = useState<Map<string, string>>(new Map());
+  const [markets, setMarkets] = useState<{ label: string; value: string }[]>([...BASE_MARKETS]);
+
+  useEffect(() => {
+    setIsDark(document.documentElement.getAttribute("data-theme") === "dark");
+    loadTickerMap()
+      .then(setTickerMap)
+      .catch(() => {});
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
+      document.documentElement.setAttribute("data-theme", "dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+      localStorage.setItem("theme", "light");
+    }
+  };
 
   useEffect(() => {
     findLatestDate()
       .then(({ date, total }) => {
         setLatestDate(date);
         setTotalCount(total);
+        fetchMarketCount(date, "KONEX").then((count) => {
+          if (count > 0) {
+            setMarkets([...BASE_MARKETS, { label: "KONEX", value: "KONEX" }]);
+          }
+        });
         return fetchPage(date, 1);
       })
       .then((items) => {
@@ -143,7 +172,12 @@ export default function StockApp() {
         <motion.span
           className="inline-block w-1 h-4 bg-(--text-dim) ml-2.5"
           animate={{ opacity: [1, 0, 1] }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear", times: [0, 0.49, 0.51] }}
+          transition={{
+            duration: 1,
+            repeat: Infinity,
+            ease: "linear",
+            times: [0, 0.49, 0.51],
+          }}
         />
       </div>
     );
@@ -160,8 +194,9 @@ export default function StockApp() {
   return (
     <div className="min-h-screen flex">
       {/* List column — full width normally, half on desktop when modal open */}
-      <div className={`flex flex-col min-w-0 transition-all duration-300 ${selectedStock ? "hidden lg:flex lg:w-1/2" : "w-full"}`}>
-
+      <div
+        className={`flex flex-col min-w-0 transition-all duration-300 ${selectedStock ? "hidden lg:flex lg:w-1/2" : "w-full"}`}
+      >
         {/* Header */}
         <motion.div
           className="flex items-end justify-between gap-6 flex-wrap px-6 lg:px-12 pt-12 pb-8"
@@ -170,14 +205,21 @@ export default function StockApp() {
           transition={{ duration: 0.3 }}
         >
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">주식 시세</h1>
+            <h1 className="text-3xl font-bold tracking-tight">KOREA TICKER</h1>
             <p className="font-mono text-base text-(--text-dim) mt-2">
               KRX · {formatDate(latestDate)} 기준
             </p>
           </div>
           <div className="flex items-center gap-4 w-full lg:w-auto">
+            <button
+              onClick={toggleTheme}
+              className="font-mono text-xs tracking-widest text-(--text-dim) hover:text-(--text) border border-(--border) px-3 py-1.5 bg-transparent transition-colors cursor-pointer whitespace-nowrap"
+            >
+              {isDark ? "LIGHT" : "DARK"}
+            </button>
             <span className="font-mono text-sm text-(--text-dim) whitespace-nowrap">
-              {filtered.length.toLocaleString()} / {totalCount.toLocaleString()}개
+              {filtered.length.toLocaleString()} / {totalCount.toLocaleString()}
+              개
             </span>
             <input
               type="text"
@@ -191,7 +233,7 @@ export default function StockApp() {
 
         {/* Tab bar */}
         <div className="flex border-b border-(--border) px-6 lg:px-12">
-          {MARKETS.map((mkt) => (
+          {markets.map((mkt) => (
             <button
               key={mkt.value}
               onClick={() => setMarketFilter(mkt.value)}
@@ -211,7 +253,10 @@ export default function StockApp() {
           {/* Column header — desktop only */}
           <div className="hidden lg:grid grid-cols-[2.5fr_80px_120px_110px_90px_120px] px-6 lg:px-12 py-4 border-b border-(--border) sticky top-0 bg-(--bg) z-10">
             {SORT_COLS.map((col) => (
-              <span key={col.key} className={col.left ? "" : "flex justify-end"}>
+              <span
+                key={col.key}
+                className={col.left ? "" : "flex justify-end"}
+              >
                 <SortBtn
                   label={col.label}
                   sortKey={col.key}
@@ -231,6 +276,7 @@ export default function StockApp() {
                 key={stock.isinCd + stock.basDt}
                 stock={stock}
                 index={i}
+                tickerMap={tickerMap}
                 onClick={() => setSelectedStock(stock)}
               />
             ))}
@@ -260,6 +306,7 @@ export default function StockApp() {
             key={selectedStock.isinCd}
             stock={selectedStock}
             latestDate={latestDate}
+            tickerMap={tickerMap}
             onClose={() => setSelectedStock(null)}
           />
         )}

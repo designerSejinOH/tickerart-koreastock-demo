@@ -1,15 +1,27 @@
 @import "tailwindcss";
 
 :root {
+  --bg: #ffffff;
+  --surface: #f7f7f7;
+  --surface2: #efefef;
+  --border: #e0e0e0;
+  --text: #111111;
+  --text-dim: #aaaaaa;
+  --text-mid: #666666;
+  --up: #111111;
+  --down: #888888;
+}
+
+[data-theme="dark"] {
   --bg: #080808;
-  --surface: #0f0f0f;
-  --surface2: #161616;
-  --border: #222;
-  --text: #e8e8e8;
-  --text-dim: #555;
-  --text-mid: #888;
-  --up: #e8534a;
-  --down: #4a90e8;
+  --surface: #111111;
+  --surface2: #1a1a1a;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --text-dim: #555555;
+  --text-mid: #888888;
+  --up: #f0f0f0;
+  --down: #666666;
 }
 
 @layer base {
@@ -26,5 +38,5 @@ body {
   font-family: var(--font-sans), 'Noto Sans KR', sans-serif;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  transition: background 0.2s, color 0.2s;
 }
-

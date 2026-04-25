@@ -30,6 +30,19 @@ export async function findLatestDate(): Promise<{ date: string; total: number }>
   throw new Error('최근 거래일을 찾을 수 없습니다');
 }
 
+export async function fetchMarketCount(date: string, market: string): Promise<number> {
+  const params = new URLSearchParams({ numOfRows: '1', pageNo: '1', basDt: date, mrktCls: market });
+  try {
+    const res = await fetch(`${BASE}&${params}`);
+    const json = await res.json();
+    return Number(
+      (json as { response?: { body?: { totalCount?: string } } })?.response?.body?.totalCount
+    ) || 0;
+  } catch {
+    return 0;
+  }
+}
+
 export async function fetchPage(date: string, page: number): Promise<StockItem[]> {
   const params = new URLSearchParams({
     numOfRows: String(PAGE_SIZE),

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { fetchStockDetail } from '@/lib/api';
 import { formatDate, formatNum, formatFieldValue, FIELD_LABELS } from '@/lib/format';
 import CandleChart from './CandleChart';
+import { lookupTicker } from '@/lib/tickerMap';
 import type { StockItem, ItemInfo, CorpInfo } from '@/lib/types';
 
 interface ModalDetailState {
@@ -41,10 +42,12 @@ function ApiTable({ data }: { data: Record<string, string | undefined> | null })
 interface StockModalProps {
   stock: StockItem;
   latestDate: string;
+  tickerMap: Map<string, string>;
   onClose: () => void;
 }
 
-export default function StockModal({ stock, latestDate, onClose }: StockModalProps) {
+export default function StockModal({ stock, latestDate, tickerMap, onClose }: StockModalProps) {
+  const newTicker = lookupTicker(stock.srtnCd, tickerMap);
   const [detail, setDetail] = useState<ModalDetailState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -112,8 +115,16 @@ export default function StockModal({ stock, latestDate, onClose }: StockModalPro
         <div className="sticky top-0 bg-(--surface) z-10 flex items-start justify-between px-6 lg:px-8 pt-6 pb-5 border-b border-(--border)">
           <div>
             <div className="text-2xl font-bold">{stock.itmsNm}</div>
-            <div className="font-mono text-xs text-(--text-dim) tracking-widest mt-1.5">
-              {stock.mrktCtg} · {stock.srtnCd} · {stock.isinCd}
+            <div className="font-mono text-xs text-(--text-dim) tracking-widest mt-1.5 flex items-center gap-1.5 flex-wrap">
+              {newTicker && (
+                <span className="text-(--text) font-semibold tracking-widest">{newTicker}</span>
+              )}
+              {newTicker && <span>·</span>}
+              <span>{stock.mrktCtg}</span>
+              <span>·</span>
+              <span>{stock.srtnCd}</span>
+              <span>·</span>
+              <span>{stock.isinCd}</span>
             </div>
           </div>
           <button
