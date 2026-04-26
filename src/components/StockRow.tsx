@@ -49,11 +49,10 @@ export default function StockRow({ stock, index, tickerMap, onClick }: StockRowP
       <div className="flex lg:hidden items-center justify-between gap-4 px-6 py-4">
         <div className="flex-1 min-w-0">
           <div className="text-base font-medium truncate">{stock.itmsNm}</div>
+          {newTicker && (
+            <div className="font-mono text-sm font-bold tracking-widest text-(--text) mt-0.5">{newTicker}</div>
+          )}
           <div className="font-mono text-xs text-(--text-dim) mt-0.5 flex items-center gap-1.5">
-            {newTicker && (
-              <span className="text-(--text-mid) font-semibold">{newTicker}</span>
-            )}
-            {newTicker && <span>·</span>}
             <span>{stock.srtnCd}</span>
             <span>·</span>
             <span>{stock.mrktCtg}</span>
@@ -68,19 +67,17 @@ export default function StockRow({ stock, index, tickerMap, onClick }: StockRowP
       </div>
 
       {/* Desktop layout */}
-      <div className="hidden lg:grid grid-cols-[2.5fr_80px_120px_110px_90px_120px] px-6 lg:px-12 py-5 items-center">
+      <div className="hidden lg:grid grid-cols-[2.5fr_120px_110px_90px_120px] px-6 lg:px-12 py-5 items-center">
         <span className="flex flex-col gap-0.5">
           <span className="text-base font-medium">{stock.itmsNm}</span>
+          {newTicker && (
+            <span className="font-mono text-sm font-bold tracking-widest text-(--text)">{newTicker}</span>
+          )}
           <span className="font-mono text-xs text-(--text-dim) tracking-wider flex items-center gap-1.5">
-            {newTicker && (
-              <span className="text-(--text-mid) font-semibold tracking-widest">{newTicker}</span>
-            )}
-            {newTicker && <span>·</span>}
             <span>{stock.srtnCd}</span>
+            <span>·</span>
+            <MarketBadge market={stock.mrktCtg} />
           </span>
-        </span>
-        <span className="font-mono text-xs">
-          <MarketBadge market={stock.mrktCtg} />
         </span>
         <span className="font-mono text-sm text-right">{formatNum(stock.clpr)}</span>
         <span className={`font-mono text-sm text-right ${cls}`}>{sign}{formatNum(stock.vs)}</span>
