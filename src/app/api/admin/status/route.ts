@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { apiStats, dartCache } from '@/lib/apiStats';
+import { apiStats } from '@/lib/apiStats';
 
 async function ping(
-  name: 'krx' | 'dart' | 'naver',
   url: string,
   options?: RequestInit
 ): Promise<{ ok: boolean; ms: number; error?: string }> {
@@ -17,25 +16,19 @@ async function ping(
 
 export async function GET() {
   const krxKey = process.env.API_KEY;
-  const dartKey = process.env.DART_API_KEY;
   const naverClientId = process.env.NAVER_CLIENT_ID;
   const naverSecret = process.env.NAVER_CLIENT_SECRET;
 
-  // 헬스체크 — 최소 파라미터로 ping
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
 
-  const [krxPing, dartPing, naverPing] = await Promise.all([
+  const [krxPing, naverPing] = await Promise.all([
     krxKey
-      ? ping('krx', `https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo?serviceKey=${encodeURIComponent(krxKey)}&numOfRows=1&pageNo=1&basDt=${dateStr}&resultType=json`)
+      ? ping(`https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo?serviceKey=${encodeURIComponent(krxKey)}&numOfRows=1&pageNo=1&basDt=${dateStr}&resultType=json`)
       : Promise.resolve({ ok: false, ms: 0, error: 'API_KEY not set' }),
 
-    dartKey
-      ? ping('dart', `https://opendart.fss.or.kr/api/company.json?crtfc_key=${dartKey}&corp_code=00126380`)
-      : Promise.resolve({ ok: false, ms: 0, error: 'DART_API_KEY not set' }),
-
     naverClientId && naverSecret
-      ? ping('naver', 'https://openapi.naver.com/v1/search/news.json?query=test&display=1', {
+      ? ping('https://openapi.naver.com/v1/search/news.json?query=test&display=1', {
           headers: {
             'X-Naver-Client-Id': naverClientId,
             'X-Naver-Client-Secret': naverSecret,
@@ -57,19 +50,6 @@ export async function GET() {
           'GetStockSecuritiesInfoService/getStockPriceInfo',
           'GetKrxListedInfoService/getItemInfo',
           'GetCorpBasicInfoService_V2/getCorpBasicInfo',
-        ],
-      },
-      dart: {
-        name: 'DART (금융감독원)',
-        configured: !!dartKey,
-        ping: dartPing,
-        stats: apiStats.dart,
-        dailyLimit: 10000,
-        cache: dartCache,
-        endpoints: [
-          'corpCode.xml',
-          'company.json',
-          'list.json',
         ],
       },
       naver: {

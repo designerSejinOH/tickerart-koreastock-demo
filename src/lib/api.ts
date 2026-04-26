@@ -104,7 +104,7 @@ export async function fetchStockDetail(
   }
 
   let corpInfo: CorpInfo | null = null;
-  if (listingInfo?.crno) {
+  if (listingInfo?.crno && !/^0+$/.test(listingInfo.crno)) {
     try {
       const corpParams = new URLSearchParams({ numOfRows: '1', pageNo: '1', crno: listingInfo.crno });
       const corpRes = await fetch(`${CORP_INFO}&${corpParams}`);

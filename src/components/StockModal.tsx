@@ -8,7 +8,7 @@ import { formatDate, formatNum, formatFieldValue, FIELD_LABELS } from '@/lib/for
 import CandleChart from './CandleChart';
 import { lookupTicker } from '@/lib/tickerMap';
 import type { StockItem, ItemInfo, CorpInfo } from '@/lib/types';
-import type { StockContext } from '@/lib/contextTypes';
+import type { NaverNewsItem } from '@/lib/contextTypes';
 
 interface ModalDetailState {
   today: StockItem;
@@ -49,106 +49,26 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex justify-between items-baseline gap-3 px-4 py-2.5 border-b border-(--border) last:border-b-0 font-mono text-xs lg:text-sm">
-      <span className="text-(--text-dim) shrink-0">{label}</span>
-      <span className="text-right break-all">{value}</span>
-    </div>
-  );
-}
 
-function ContextSection({
-  context,
+function NewsSection({
+  news,
+  newsError,
   loading,
 }: {
-  context: StockContext | null;
+  news: NaverNewsItem[];
+  newsError: string | null;
   loading: boolean;
 }) {
-  if (loading) {
-    return (
-      <>
-        <SectionLabel>맥락 데이터 로딩 중...</SectionLabel>
-        <div className="border border-(--border) px-4 py-3 font-mono text-xs text-(--text-dim)">—</div>
-      </>
-    );
-  }
-
-  if (!context) return null;
-
-  const { company, disclosures, news, companyError, disclosureError, newsError } = context;
-
   return (
     <>
-      {/* 기업 개황 */}
-      <SectionLabel>DART · 기업개황</SectionLabel>
-      {companyError ? (
-        <div className="border border-(--border) px-4 py-3 font-mono text-xs text-(--text-dim)">{companyError}</div>
-      ) : company ? (
-        <div className="border border-(--border)">
-          {company.ceo_nm && <InfoRow label="대표이사" value={company.ceo_nm} />}
-          {company.induty_code && <InfoRow label="업종코드" value={company.induty_code} />}
-          {company.est_dt && <InfoRow label="설립일" value={`${company.est_dt.slice(0,4)}.${company.est_dt.slice(4,6)}.${company.est_dt.slice(6,8)}`} />}
-          {company.acc_mt && <InfoRow label="결산월" value={`${company.acc_mt}월`} />}
-          {company.adres && <InfoRow label="주소" value={company.adres} />}
-          {company.phn_no && <InfoRow label="전화" value={company.phn_no} />}
-          {company.hm_url && (
-            <InfoRow
-              label="홈페이지"
-              value={
-                <a
-                  href={company.hm_url.startsWith('http') ? company.hm_url : `https://${company.hm_url}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-(--text) transition-colors"
-                >
-                  {company.hm_url}
-                </a>
-              }
-            />
-          )}
-          {company.bizr_no && <InfoRow label="사업자번호" value={company.bizr_no} />}
-        </div>
-      ) : (
-        <div className="border border-(--border) px-4 py-3 font-mono text-xs text-(--text-dim)">데이터 없음</div>
-      )}
-
-      {/* 최근 공시 */}
-      <SectionLabel>
-        DART · 최근 공시
-        {disclosureError && <span className="text-(--up) ml-2">{disclosureError}</span>}
-      </SectionLabel>
-      <div className="border border-(--border)">
-        {disclosures.length === 0 ? (
-          <div className="px-4 py-3 font-mono text-xs text-(--text-dim)">최근 90일 공시 없음</div>
-        ) : (
-          disclosures.map((d) => (
-            <a
-              key={d.rcept_no}
-              href={`https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${d.rcept_no}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex justify-between items-baseline gap-4 px-4 py-2.5 border-b border-(--border) last:border-b-0 hover:bg-(--surface2) transition-colors group"
-            >
-              <span className="font-mono text-xs text-(--text-dim) shrink-0">
-                {`${d.rcept_dt.slice(0,4)}.${d.rcept_dt.slice(4,6)}.${d.rcept_dt.slice(6,8)}`}
-              </span>
-              <span className="text-xs text-right group-hover:text-(--text) transition-colors">
-                {d.report_nm}
-                {d.rm && <span className="text-(--text-dim) ml-1.5">[{d.rm}]</span>}
-              </span>
-            </a>
-          ))
-        )}
-      </div>
-
-      {/* 뉴스 */}
       <SectionLabel>
         Naver 뉴스
         {newsError && <span className="text-(--up) ml-2">{newsError}</span>}
       </SectionLabel>
       <div className="border border-(--border)">
-        {news.length === 0 ? (
+        {loading ? (
+          <div className="px-4 py-3 font-mono text-xs text-(--text-dim)">로딩 중...</div>
+        ) : news.length === 0 ? (
           <div className="px-4 py-3 font-mono text-xs text-(--text-dim)">뉴스 없음</div>
         ) : (
           news.map((item, i) => (
@@ -189,7 +109,7 @@ export default function StockModal({ stock, latestDate, tickerMap, onClose }: St
   const newTicker = lookupTicker(stock.srtnCd, tickerMap);
   const [detail, setDetail] = useState<ModalDetailState | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [context, setContext] = useState<StockContext | null>(null);
+  const [context, setContext] = useState<{ news: NaverNewsItem[]; newsError: string | null } | null>(null);
   const [contextLoading, setContextLoading] = useState(true);
 
   useEffect(() => {
@@ -362,8 +282,12 @@ export default function StockModal({ stock, latestDate, tickerMap, onClose }: St
                   </>
                 )}
 
-                {/* Context section */}
-                <ContextSection context={context} loading={contextLoading} />
+                {/* 뉴스 */}
+                <NewsSection
+                  news={context?.news ?? []}
+                  newsError={context?.newsError ?? null}
+                  loading={contextLoading}
+                />
 
                 <div className="pb-8" />
               </motion.div>
