@@ -31,7 +31,7 @@ export default function CandleChart({ today, yesterday }: CandleChartProps) {
 
   const yS = (v: number) => pl.top + (1 - (v - lo) / (hi - lo)) * cH;
 
-  const gridLines = [0, 1, 2, 3].map(i => ({
+  const gridLines = [0, 1, 2, 3].map((i) => ({
     y: pl.top + (i / 3) * cH,
     val: hi - (i / 3) * (hi - lo),
   }));
@@ -46,7 +46,7 @@ export default function CandleChart({ today, yesterday }: CandleChartProps) {
     const high = Number(d.hipr);
     const low = Number(d.lopr);
     const isUp = close >= open;
-    const color = isUp ? '#e8534a' : '#4a90e8';
+    const color = isUp ? 'var(--up)' : 'var(--down)';
     const bodyTop = yS(Math.max(open, close));
     const bodyH = Math.max(2, Math.abs(yS(open) - yS(close)));
     return { x, high, low, color, bodyTop, bodyH, label: labels[i] };
@@ -63,11 +63,11 @@ export default function CandleChart({ today, yesterday }: CandleChartProps) {
           <line
             x1={pl.left} y1={gl.y}
             x2={W - pl.right} y2={gl.y}
-            stroke="#1c1c1c" strokeWidth={1}
+            stroke="var(--border)" strokeWidth={1}
           />
           <text
             x={W - pl.right + 6} y={gl.y + 3}
-            fill="#3a3a3a"
+            fill="var(--text-dim)"
             fontSize={9}
             fontFamily="var(--font-mono), 'IBM Plex Mono', monospace"
           >
@@ -91,7 +91,7 @@ export default function CandleChart({ today, yesterday }: CandleChartProps) {
           />
           <text
             x={c.x} y={H - 8}
-            fill="#555"
+            fill="var(--text-dim)"
             fontSize={9}
             fontFamily="var(--font-mono), 'IBM Plex Mono', monospace"
             textAnchor="middle"
