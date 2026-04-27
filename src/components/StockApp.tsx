@@ -6,7 +6,7 @@ import StockRow from "./StockRow";
 import StockModal from "./StockModal";
 import { findLatestDate, fetchPage, fetchMarketCount } from "@/lib/api";
 import { formatDate } from "@/lib/format";
-import { loadTickerMap } from "@/lib/tickerMap";
+import { loadTickerMap, lookupTicker } from "@/lib/tickerMap";
 import type { StockItem, SortKey } from "@/lib/types";
 
 const ITEMS_PER_PAGE = 50;
@@ -228,11 +228,13 @@ export default function StockApp() {
     if (marketFilter)
       result = result.filter((d) => (d.mrktCtg || "").toUpperCase() === marketFilter);
     if (q)
-      result = result.filter(
-        (d) =>
-          (d.itmsNm || "").toLowerCase().includes(q) ||
-          (d.srtnCd || "").includes(q)
-      );
+      result = result.filter((d) => {
+        if ((d.itmsNm || "").toLowerCase().includes(q)) return true;
+        if ((d.srtnCd || "").includes(q)) return true;
+        const ticker = lookupTicker(d.srtnCd, tickerMap);
+        if (ticker && ticker.toLowerCase().includes(q)) return true;
+        return false;
+      });
     if (sortKey) {
       const isStr = sortKey === "itmsNm" || sortKey === "mrktCtg";
       result = [...result].sort((a, b) => {
